@@ -10,15 +10,20 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/1morshed1/go-llm-server/internal/batcher"
 	"github.com/1morshed1/go-llm-server/internal/config"
 	"github.com/1morshed1/go-llm-server/internal/engine"
+	"github.com/1morshed1/go-llm-server/internal/grpcapi"
+	"github.com/1morshed1/go-llm-server/internal/grpcapi/pb"
 	"github.com/1morshed1/go-llm-server/internal/kvcache"
 	"github.com/1morshed1/go-llm-server/internal/metrics"
 	"github.com/1morshed1/go-llm-server/internal/scheduler"
@@ -64,6 +69,24 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
+	// --- gRPC layer (a second front door onto the same scheduler) ---
+	var grpcServer *grpc.Server
+	if cfg.GRPCAddr != "" {
+		grpcServer = grpc.NewServer()
+		pb.RegisterInferenceServiceServer(grpcServer,
+			grpcapi.New(sched, eng, tok, rec, 128, scheduler.ErrQueueFull))
+		lis, err := net.Listen("tcp", cfg.GRPCAddr)
+		if err != nil {
+			log.Fatalf("grpc listen: %v", err)
+		}
+		go func() {
+			log.Printf("gRPC listening on %s", cfg.GRPCAddr)
+			if err := grpcServer.Serve(lis); err != nil {
+				log.Printf("grpc serve: %v", err)
+			}
+		}()
+	}
+
 	// --- run with graceful shutdown ---
 	go func() {
 		info := eng.Info()
@@ -86,6 +109,9 @@ func main() {
 	defer cancel()
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		log.Printf("http shutdown: %v", err)
+	}
+	if grpcServer != nil {
+		grpcServer.GracefulStop()
 	}
 	// 2. Stop the scheduler (fails anything still queued).
 	sched.Close()

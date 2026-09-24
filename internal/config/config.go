@@ -23,6 +23,7 @@ import (
 // in main reads top-to-bottom with no surprises.
 type Config struct {
 	Addr      string // HTTP listen address, e.g. ":8080"
+	GRPCAddr  string // gRPC listen address, e.g. ":50051"; empty disables gRPC
 	VocabSize int    // tokenizer vocabulary size
 	Model     engine.MockConfig
 	KV        kvcache.Config
@@ -36,6 +37,7 @@ func Load(args []string) (Config, error) {
 	// Start from every component's own defaults.
 	c := Config{
 		Addr:      env("ADDR", ":8080"),
+		GRPCAddr:  env("GRPC_ADDR", ":50051"),
 		VocabSize: envInt("VOCAB_SIZE", 32000),
 		Model:     engine.DefaultMockConfig(),
 		KV:        kvcache.DefaultConfig(),
@@ -58,6 +60,7 @@ func Load(args []string) (Config, error) {
 	// Flags override env. Register the most common ones.
 	fs := flag.NewFlagSet("go-llm-server", flag.ContinueOnError)
 	fs.StringVar(&c.Addr, "addr", c.Addr, "HTTP listen address")
+	fs.StringVar(&c.GRPCAddr, "grpc-addr", c.GRPCAddr, "gRPC listen address (empty disables gRPC)")
 	fs.StringVar(&c.Model.Name, "model", c.Model.Name, "model name reported by the API")
 	fs.IntVar(&c.Batcher.MaxBatchSize, "max-batch", c.Batcher.MaxBatchSize, "maximum concurrent sequences per forward pass")
 	fs.IntVar(&c.KV.NumBlocks, "kv-blocks", c.KV.NumBlocks, "number of KV-cache blocks")

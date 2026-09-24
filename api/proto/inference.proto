@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+// Package inference defines a gRPC streaming API for the server, alongside the
+// OpenAI-compatible REST API. gRPC is a natural fit for token streaming:
+// server-streaming RPCs give you a typed, multiplexed, HTTP/2 stream with
+// backpressure built in — no hand-rolled SSE framing. See docs/11-grpc.md.
+package inference;
+
+option go_package = "github.com/1morshed1/go-llm-server/internal/grpcapi/pb;pb";
+
+// InferenceService exposes generation and a health/model-info probe.
+service InferenceService {
+  // Generate runs one completion and STREAMS tokens back as they are produced.
+  // This is a server-streaming RPC: one request, many responses.
+  rpc Generate(GenerateRequest) returns (stream GenerateResponse);
+
+  // Info returns model metadata (used as a lightweight health/discovery call).
+  rpc Info(InfoRequest) returns (InfoResponse);
+}
+
+message ChatMessage {
+  string role = 1;    // "system" | "user" | "assistant"
+  string content = 2;
+}
+
+message GenerateRequest {
+  string model = 1;
+  repeated ChatMessage messages = 2;
+  int32 max_tokens = 3;
+  double temperature = 4;
+  double top_p = 5;
+  repeated string stop = 6;
+  int64 seed = 7;
+}
+
+// One streamed chunk. Either a token (while generating) or the terminal signal
+// (done = true) carrying the finish reason.
+message GenerateResponse {
+  string token = 1;          // the newly generated text piece
+  bool done = 2;             // true on the final message
+  string finish_reason = 3;  // set when done: "stop" | "length" | "canceled"
+  int32 prompt_tokens = 4;   // set when done: prompt token count
+  int32 completion_tokens = 5; // set when done: generated token count
+}
+
+message InfoRequest {}
+
+message InfoResponse {
+  string model = 1;
+  int32 context_length = 2;
+  int32 vocab_size = 3;
+  int32 queue_depth = 4;
+}

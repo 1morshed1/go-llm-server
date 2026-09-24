@@ -2,10 +2,7 @@ package server
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -13,6 +10,7 @@ import (
 
 	"github.com/1morshed1/go-llm-server/internal/domain"
 	"github.com/1morshed1/go-llm-server/internal/openai"
+	"github.com/1morshed1/go-llm-server/internal/prompt"
 )
 
 // handleChatCompletions implements POST /v1/chat/completions for both streaming
@@ -103,92 +101,34 @@ type httpError struct {
 	msg     string
 }
 
-// buildDomainRequest validates and clamps the wire request, renders the chat
-// messages into a single prompt, tokenizes it, marks the cacheable prefix, and
-// produces a domain.Request ready for the scheduler.
+// buildDomainRequest maps the OpenAI wire request onto the shared prompt.Build
+// (which does templating, tokenization, prefix marking, validation, and
+// clamping) and maps any validation error back to an HTTP status. The actual
+// logic lives in internal/prompt so REST and gRPC build requests identically.
 func (s *Server) buildDomainRequest(ctx context.Context, body *openai.ChatCompletionRequest) (*domain.Request, *httpError) {
-	if len(body.Messages) == 0 {
-		return nil, &httpError{http.StatusBadRequest, "invalid_request_error", "messages must not be empty"}
-	}
-
-	prompt, prefixText := renderPrompt(body.Messages)
-	promptTokens := s.tok.Encode(prompt)
-	prefixLen := len(s.tok.Encode(prefixText))
-
-	info := s.eng.Info()
-	if len(promptTokens) >= info.ContextLength {
-		return nil, &httpError{http.StatusBadRequest, "invalid_request_error",
-			fmt.Sprintf("prompt has %d tokens, exceeding the model's context length of %d", len(promptTokens), info.ContextLength)}
-	}
-
-	// Sampling params: apply defaults, then clamp to safe ranges. Clamping at the
-	// boundary means the engine can trust its inputs and never has to defend
-	// against absurd values.
-	maxTokens := s.opts.DefaultMaxTokens
-	if body.MaxTokens != nil {
-		maxTokens = *body.MaxTokens
-	}
-	if maxAllowed := info.ContextLength - len(promptTokens); maxTokens > maxAllowed {
-		maxTokens = maxAllowed
-	}
-	if maxTokens < 1 {
-		maxTokens = 1
-	}
-
-	temperature := 1.0
-	if body.Temperature != nil {
-		temperature = clampFloat(*body.Temperature, 0, 2)
-	}
-	topP := 1.0
-	if body.TopP != nil {
-		topP = clampFloat(*body.TopP, 0, 1)
+	msgs := make([]prompt.Message, len(body.Messages))
+	for i, m := range body.Messages {
+		msgs[i] = prompt.Message{Role: m.Role, Content: m.Content}
 	}
 	var seed int64
 	if body.Seed != nil {
 		seed = *body.Seed
 	}
-
-	req := &domain.Request{
-		ID:           genID(),
-		Model:        body.Model,
-		Prompt:       prompt,
-		PromptTokens: promptTokens,
-		PrefixLen:    prefixLen,
-		Params: domain.SamplingParams{
-			Temperature: temperature,
-			TopP:        topP,
-			MaxTokens:   maxTokens,
-			Stop:        []string(body.Stop),
-			Seed:        seed,
-		},
-		Ctx: ctx,
-		// Buffer the stream so a slow client never blocks the batcher loop; the
-		// batcher also selects on ctx, so this is belt-and-suspenders.
-		Stream: make(chan domain.StreamEvent, maxTokens+8),
+	spec := prompt.GenSpec{
+		Model:       body.Model,
+		Messages:    msgs,
+		MaxTokens:   body.MaxTokens,
+		Temperature: body.Temperature,
+		TopP:        body.TopP,
+		Stop:        []string(body.Stop),
+		Seed:        seed,
+	}
+	info := s.eng.Info()
+	req, berr := prompt.Build(ctx, s.tok, info.ContextLength, s.opts.DefaultMaxTokens, spec)
+	if berr != nil {
+		return nil, &httpError{http.StatusBadRequest, "invalid_request_error", berr.Message}
 	}
 	return req, nil
-}
-
-// renderPrompt flattens chat messages into a single prompt string using a simple
-// role-tagged template, and returns the leading system portion separately as the
-// cacheable prefix (see docs/04 on prefix caching). A real server would use the
-// model's own chat template; the shape is what matters here.
-func renderPrompt(messages []openai.Message) (prompt, prefixText string) {
-	var sb, prefix strings.Builder
-	prefixEnded := false
-	for _, m := range messages {
-		block := fmt.Sprintf("<|%s|>\n%s\n", m.Role, m.Content)
-		sb.WriteString(block)
-		if !prefixEnded {
-			if m.Role == string(domain.RoleSystem) {
-				prefix.WriteString(block)
-			} else {
-				prefixEnded = true
-			}
-		}
-	}
-	sb.WriteString("<|assistant|>\n") // primer that cues the model to reply
-	return sb.String(), prefix.String()
 }
 
 // mapFinishReason converts our domain finish reason to the OpenAI string. A
@@ -203,21 +143,4 @@ func mapFinishReason(r domain.FinishReason) string {
 	default:
 		return "stop"
 	}
-}
-
-func clampFloat(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
-}
-
-// genID returns an OpenAI-style request id like "chatcmpl-<hex>".
-func genID() string {
-	var b [12]byte
-	_, _ = rand.Read(b[:])
-	return "chatcmpl-" + hex.EncodeToString(b[:])
 }

@@ -21,7 +21,8 @@ services:
       STEP_PER_SEQ: "1ms"
       PREFILL_PER_TOKEN: "400us"
     ports:
-      - "8080:8080"
+      - "8080:8080"   # HTTP / OpenAI-compatible REST
+      - "50051:50051" # gRPC streaming API
     healthcheck:
       # distroless has no shell; use the binary itself would need a subcommand,
       # so we rely on Prometheus up-ness instead and keep this a simple TCP check

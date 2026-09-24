@@ -9,12 +9,18 @@ It implements the *serving layer* that sits between a model and the HTTP API
 your applications call:
 
 - **OpenAI-compatible REST API** (`POST /v1/chat/completions`, streaming + non-streaming)
+- **gRPC streaming API** (a second front door onto the same scheduler)
 - **Request scheduler** with a priority queue, admission control, and per-request timeouts
 - **Continuous batching** (the vLLM trick that gives 2–3× throughput over naive batching)
 - **KV-cache manager** with **prefix caching** (reuse the KV of shared system prompts)
 - **Pluggable inference engine** behind a single Go interface
 - **Prometheus metrics** + a **Grafana dashboard**
 - **Docker Compose** stack (server + Prometheus + Grafana)
+
+Measured on the simulated engine (`make bench`): **8.75× throughput** scaling to
+batch 16, **3.21× continuous vs. naive batching** on mixed traffic, and a
+**98.4% prefix-cache hit rate** cutting average TTFT by **26%**. See
+[docs/10](docs/10-benchmarks.md).
 
 > **The compute backend is pluggable.** The interesting, hard, and portable part
 > of an inference server is *everything around* the matrix multiplications:
@@ -44,6 +50,7 @@ guided tour, written in the order the code was built. Start here:
 | [08 — Observability](docs/08-observability.md) | The metrics that matter and why |
 | [09 — Deployment](docs/09-deployment.md) | Docker, Compose, Prometheus, Grafana |
 | [10 — Benchmarks](docs/10-benchmarks.md) | Measuring TTFT, throughput, and the batching win |
+| [11 — The gRPC API](docs/11-grpc.md) | A second transport, and what it proves about the design |
 
 Every doc also records **decisions and trade-offs** as we go — that decision
 log is the real learning material.
@@ -67,10 +74,14 @@ curl -N localhost:8080/v1/chat/completions \
 
 Other endpoints: `GET /healthz`, `GET /v1/models`, `GET /metrics`.
 
+The gRPC API listens on `:50051` (disable with `--grpc-addr ""`); the contract is
+`api/proto/inference.proto`. See [docs/11](docs/11-grpc.md).
+
 ## Project layout
 
 ```
 cmd/server/          Entry point: wiring and graceful shutdown
+api/proto/           gRPC service definition (inference.proto)
 internal/
   domain/            Core types shared by every layer (no transport code)
   config/            Configuration (flags + environment variables)
@@ -79,10 +90,13 @@ internal/
   kvcache/           KV-cache manager + prefix caching
   scheduler/         Priority queue, admission control, timeouts
   batcher/           Continuous batcher (the forward-pass loop)
-  server/            HTTP handlers, chat templating, SSE streaming
+  prompt/            Shared chat templating, validation, request building
+  server/            HTTP handlers, OpenAI compatibility, SSE streaming
+  grpcapi/           gRPC streaming server (+ generated pb/)
   metrics/           Prometheus metrics
 deploy/              Dockerfile, docker-compose, Prometheus & Grafana config
-scripts/             Load-generator / benchmark helper
+scripts/bench/       In-process benchmark suite
+scripts/loadgen/     HTTP load generator
 docs/                The guided tour + decision log
 ```
 

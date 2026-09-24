@@ -115,6 +115,31 @@ This is a deliberate signal: these are implementation details of *this server*,
 not a reusable library. It keeps us free to refactor package boundaries without
 worrying about external consumers.
 
+### D6 — Add gRPC as a second transport, and extract a shared `prompt` package to serve both.
+
+**Context.** The brief lists a gRPC streaming endpoint alongside the REST API.
+Adding it risked duplicating the prompt-rendering and validation logic that lived
+inside the REST handler — and duplicated logic drifts, so the two APIs would
+slowly disagree.
+
+**Decision.** Define the service in `api/proto/inference.proto` (a
+server-streaming `Generate` RPC) and implement it in `internal/grpcapi`, and
+extract all "chat messages → validated `domain.Request`" logic into
+`internal/prompt`. Both transports map their wire types to a neutral
+`prompt.GenSpec` and submit to the *same* scheduler.
+
+**Why it matters.** Adding an entire second network protocol required **zero
+changes** below the transport layer — concrete proof that D2 and D3 (transport
+out of the core; requests carry their own stream) actually pay off. The second
+caller is also what *forced* the good factoring: duplication became a shared
+package the moment there were two front doors. Full discussion in
+[doc 11](11-grpc.md).
+
+**Trade-off.** Two ports and a code-generation step (the generated Go is checked
+in so `go build` needs no `protoc`). No TLS in the demo. A single-port
+HTTP+gRPC multiplexer was considered and rejected as machinery with no teaching
+value here.
+
 ---
 
 *Later phases append their decisions below as they are made.*
