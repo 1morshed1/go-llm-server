@@ -69,9 +69,9 @@ func DefaultConfig() Config {
 type Scheduler struct {
 	cfg Config
 
-	mu    sync.Mutex
-	pq    priorityQueue
-	seq   int64 // monotonic arrival counter, used for FCFS tie-breaking
+	mu     sync.Mutex
+	pq     priorityQueue
+	seq    int64 // monotonic arrival counter, used for FCFS tie-breaking
 	notify chan struct{}
 	closed bool
 

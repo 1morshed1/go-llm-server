@@ -39,15 +39,15 @@ func (r *countingRecorder) IncRequestsFinished(reason string) {
 	r.finished[reason]++
 	r.mu.Unlock()
 }
-func (r *countingRecorder) ObserveTTFT(float64) { r.mu.Lock(); r.ttftObserved++; r.mu.Unlock() }
+func (r *countingRecorder) ObserveTTFT(float64)            { r.mu.Lock(); r.ttftObserved++; r.mu.Unlock() }
 func (r *countingRecorder) ObserveRequestDuration(float64) {}
 func (r *countingRecorder) ObserveTokensPerSecond(float64) {}
-func (r *countingRecorder) IncRequestsRejected()          {}
-func (r *countingRecorder) IncRequestsReceived()          {}
-func (r *countingRecorder) SetQueueDepth(int)             {}
-func (r *countingRecorder) SetActiveBatch(int)            {}
-func (r *countingRecorder) SetKVCacheUtilization(float64) {}
-func (r *countingRecorder) SetPrefixHitRate(float64)      {}
+func (r *countingRecorder) IncRequestsRejected()           {}
+func (r *countingRecorder) IncRequestsReceived()           {}
+func (r *countingRecorder) SetQueueDepth(int)              {}
+func (r *countingRecorder) SetActiveBatch(int)             {}
+func (r *countingRecorder) SetKVCacheUtilization(float64)  {}
+func (r *countingRecorder) SetPrefixHitRate(float64)       {}
 
 // locked accessors for use from the test goroutine.
 func (r *countingRecorder) getMaxBatch() int {

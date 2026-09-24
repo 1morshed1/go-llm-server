@@ -1,6 +1,6 @@
 // Package tokenizer turns text into tokens and back.
 //
-// WHY THIS EXISTS
+// # WHY THIS EXISTS
 //
 // Models don't operate on characters or words — they operate on *tokens*,
 // integer IDs into a fixed vocabulary. Before the model can process a prompt,

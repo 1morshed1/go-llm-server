@@ -28,9 +28,9 @@ type Prometheus struct {
 	tokensPerS prometheus.Histogram
 	batchSize  prometheus.Histogram
 
-	queueDepth   prometheus.Gauge
-	activeBatch  prometheus.Gauge
-	kvUtil       prometheus.Gauge
+	queueDepth    prometheus.Gauge
+	activeBatch   prometheus.Gauge
+	kvUtil        prometheus.Gauge
 	prefixHitRate prometheus.Gauge
 }
 
@@ -82,12 +82,12 @@ func (p *Prometheus) IncTokensGenerated(n int)         { p.tokensGenerated.Add(f
 func (p *Prometheus) IncRequestsFinished(reason string) {
 	p.requestsFinished.WithLabelValues(reason).Inc()
 }
-func (p *Prometheus) IncRequestsRejected()               { p.requestsRejected.Inc() }
-func (p *Prometheus) IncRequestsReceived()               { p.requestsReceived.Inc() }
-func (p *Prometheus) SetQueueDepth(n int)                { p.queueDepth.Set(float64(n)) }
-func (p *Prometheus) SetActiveBatch(n int)               { p.activeBatch.Set(float64(n)) }
-func (p *Prometheus) SetKVCacheUtilization(f float64)    { p.kvUtil.Set(f) }
-func (p *Prometheus) SetPrefixHitRate(r float64)         { p.prefixHitRate.Set(r) }
+func (p *Prometheus) IncRequestsRejected()            { p.requestsRejected.Inc() }
+func (p *Prometheus) IncRequestsReceived()            { p.requestsReceived.Inc() }
+func (p *Prometheus) SetQueueDepth(n int)             { p.queueDepth.Set(float64(n)) }
+func (p *Prometheus) SetActiveBatch(n int)            { p.activeBatch.Set(float64(n)) }
+func (p *Prometheus) SetKVCacheUtilization(f float64) { p.kvUtil.Set(f) }
+func (p *Prometheus) SetPrefixHitRate(r float64)      { p.prefixHitRate.Set(r) }
 
 // --- small constructors that register as they build ---
 

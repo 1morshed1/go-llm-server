@@ -1,6 +1,6 @@
 // Package kvcache models the memory that dominates LLM serving: the KV cache.
 //
-// WHAT THE KV CACHE IS
+// # WHAT THE KV CACHE IS
 //
 // When a transformer generates token N, it must attend over the keys and values
 // (the "KV") of tokens 1..N-1. Recomputing those every step would be quadratic,
@@ -259,15 +259,15 @@ func (m *Manager) lruEvictable() *prefixEntry {
 
 // Stats is a snapshot for metrics and health endpoints.
 type Stats struct {
-	Capacity     int     // total blocks
-	Used         int     // blocks in use
-	Utilization  float64 // Used / Capacity in [0,1]
-	PrefixCount  int     // number of cached prefixes
-	Hits         int64
-	Misses       int64
-	HitRate      float64 // Hits / (Hits + Misses)
-	BlockSize    int
-	TokenBudget  int // Capacity × BlockSize
+	Capacity    int     // total blocks
+	Used        int     // blocks in use
+	Utilization float64 // Used / Capacity in [0,1]
+	PrefixCount int     // number of cached prefixes
+	Hits        int64
+	Misses      int64
+	HitRate     float64 // Hits / (Hits + Misses)
+	BlockSize   int
+	TokenBudget int // Capacity × BlockSize
 }
 
 // Stats returns a consistent snapshot.

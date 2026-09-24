@@ -1,7 +1,7 @@
 // Package batcher implements CONTINUOUS BATCHING — the technique that makes an
 // LLM server efficient, and the centerpiece of this project.
 //
-// THE PROBLEM WITH NAIVE BATCHING
+// # THE PROBLEM WITH NAIVE BATCHING
 //
 // To use a GPU well you must run many sequences per forward pass. The naive
 // way: collect N requests, run them together until ALL finish, then return.
@@ -13,10 +13,10 @@
 //
 // Instead of batching whole requests, we batch a single STEP. Each iteration:
 //
-//   1. top up the batch from the queue (new requests JOIN mid-flight),
-//   2. run ONE decode step across all active sequences (each advances 1 token),
-//   3. any sequence that finished this step LEAVES immediately, freeing its KV
-//      and its slot for the next queued request.
+//  1. top up the batch from the queue (new requests JOIN mid-flight),
+//  2. run ONE decode step across all active sequences (each advances 1 token),
+//  3. any sequence that finished this step LEAVES immediately, freeing its KV
+//     and its slot for the next queued request.
 //
 // So a finished request never blocks the others, and a new request never waits
 // for the batch to drain. This is how vLLM/TGI get 2–3× the throughput of naive

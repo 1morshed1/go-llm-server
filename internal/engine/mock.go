@@ -47,8 +47,8 @@ func DefaultMockConfig() MockConfig {
 		ContextLength:   4096,
 		VocabSize:       32000,
 		PrefillPerToken: 400 * time.Microsecond, // ~40ms for a 100-token prompt
-		StepBase:        18 * time.Millisecond,   // ~55 tok/s at batch size 1
-		StepPerSeq:      1 * time.Millisecond,    // batch of 16 → ~470 tok/s
+		StepBase:        18 * time.Millisecond,  // ~55 tok/s at batch size 1
+		StepPerSeq:      1 * time.Millisecond,   // batch of 16 → ~470 tok/s
 		MinNewTokens:    24,
 		MaxNewTokens:    96,
 	}

@@ -22,8 +22,8 @@ import (
 // Config aggregates every component's configuration in one struct so the wiring
 // in main reads top-to-bottom with no surprises.
 type Config struct {
-	Addr      string           // HTTP listen address, e.g. ":8080"
-	VocabSize int              // tokenizer vocabulary size
+	Addr      string // HTTP listen address, e.g. ":8080"
+	VocabSize int    // tokenizer vocabulary size
 	Model     engine.MockConfig
 	KV        kvcache.Config
 	Scheduler scheduler.Config
