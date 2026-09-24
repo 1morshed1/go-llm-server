@@ -63,7 +63,10 @@ func TestHealthz(t *testing.T) {
 
 func TestModels(t *testing.T) {
 	ts := newTestServer(t)
-	resp, _ := http.Get(ts.URL + "/v1/models")
+	resp, err := http.Get(ts.URL + "/v1/models")
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer resp.Body.Close()
 	var list openai.ModelList
 	json.NewDecoder(resp.Body).Decode(&list)
@@ -154,7 +157,10 @@ func TestChatCompletionStreaming(t *testing.T) {
 func TestEmptyMessagesRejected(t *testing.T) {
 	ts := newTestServer(t)
 	body := `{"model":"mock-7b","messages":[]}`
-	resp, _ := http.Post(ts.URL+"/v1/chat/completions", "application/json", strings.NewReader(body))
+	resp, err := http.Post(ts.URL+"/v1/chat/completions", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("status %d, want 400", resp.StatusCode)

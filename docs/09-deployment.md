@@ -85,7 +85,7 @@ batching, live.
 # terminal 1
 docker compose -f deploy/docker-compose.yml up --build
 # terminal 2 — generate load
-go run ./scripts/loadgen.go -url http://localhost:8080 -concurrency 32 -requests 2000
+go run ./scripts/loadgen -url http://localhost:8080 -concurrency 32 -requests 2000
 # browser
 open http://localhost:3000   # dashboard
 open http://localhost:9090   # raw Prometheus, if you want to poke at queries
