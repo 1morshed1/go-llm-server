@@ -1,0 +1,21 @@
+# Binaries
+/bin/
+/server
+*.exe
+*.out
+
+# Test & coverage artifacts
+*.test
+coverage.out
+coverage.html
+
+# Local model files (never commit multi-GB weights)
+*.gguf
+*.onnx
+/models/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
