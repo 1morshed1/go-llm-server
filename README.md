@@ -51,6 +51,7 @@ guided tour, written in the order the code was built. Start here:
 | [09 — Deployment](docs/09-deployment.md) | Docker, Compose, Prometheus, Grafana |
 | [10 — Benchmarks](docs/10-benchmarks.md) | Measuring TTFT, throughput, and the batching win |
 | [11 — The gRPC API](docs/11-grpc.md) | A second transport, and what it proves about the design |
+| [12 — Wrap-up & extensions](docs/12-wrap-up-and-extensions.md) | How it maps to real systems, and what to build next |
 
 Every doc also records **decisions and trade-offs** as we go — that decision
 log is the real learning material.
@@ -100,7 +101,22 @@ scripts/loadgen/     HTTP load generator
 docs/                The guided tour + decision log
 ```
 
+## Testing & tooling
+
+```bash
+make test     # run all tests
+make race     # tests under the race detector
+make bench    # in-process benchmark suite (docs/10)
+make check    # fmt + vet + race — run before committing
+make help     # list all targets
+```
+
 ## Status
 
-See the [decision log](docs/01-architecture-and-decisions.md) and each phase
-doc for what is implemented and what is intentionally out of scope.
+The serving layer is complete end-to-end: REST + gRPC APIs, scheduling,
+continuous batching, KV cache with prefix caching, metrics, and a deployable
+stack, all covered by tests and benchmarks. What's intentionally deferred — a
+real `llama.cpp` backend, a multi-model manager/hot-swap, chunked prefill,
+preemption, auth, and Kubernetes manifests — is catalogued with implementation
+notes in [docs/12](docs/12-wrap-up-and-extensions.md). The full rationale for
+every design choice lives in the [decision log](docs/01-architecture-and-decisions.md).
