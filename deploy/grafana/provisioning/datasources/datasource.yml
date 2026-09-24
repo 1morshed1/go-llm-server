@@ -1,0 +1,12 @@
+# Auto-provision Prometheus as Grafana's default datasource, so the dashboard
+# works the moment the stack comes up — no manual clicking.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus # fixed uid so the provisioned dashboard can reference it
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true

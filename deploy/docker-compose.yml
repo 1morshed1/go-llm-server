@@ -1,0 +1,53 @@
+# Full local stack: the inference server + Prometheus (scraping it) + Grafana
+# (dashboards pre-provisioned). From the repo root:
+#
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# Then:
+#   server      http://localhost:8080  (try /healthz, /v1/models, /metrics)
+#   Prometheus  http://localhost:9090
+#   Grafana     http://localhost:3000  (anonymous, opens the dashboard)
+#
+services:
+  server:
+    build:
+      context: ..            # repo root, so the Dockerfile can COPY the source
+      dockerfile: Dockerfile
+    image: go-llm-server:local
+    command: ["--addr", ":8080", "--max-batch", "16", "--prefix-cache"]
+    environment:
+      # A touch of simulated latency so the dashboards show realistic curves.
+      STEP_BASE: "18ms"
+      STEP_PER_SEQ: "1ms"
+      PREFILL_PER_TOKEN: "400us"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      # distroless has no shell; use the binary itself would need a subcommand,
+      # so we rely on Prometheus up-ness instead and keep this a simple TCP check
+      # via Docker's built-in CMD-SHELL is unavailable — omit and let compose
+      # start Prometheus regardless.
+      disable: true
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - server
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/etc/grafana/provisioning/dashboards/go-llm-server.json"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

@@ -1,0 +1,12 @@
+.git
+.gitignore
+bin/
+*.test
+coverage.out
+coverage.html
+docs/
+deploy/
+scripts/
+*.gguf
+*.onnx
+models/

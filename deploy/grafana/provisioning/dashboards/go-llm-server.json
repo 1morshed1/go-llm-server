@@ -1,0 +1,104 @@
+{
+  "title": "go-llm-server",
+  "uid": "go-llm-server",
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Aggregate throughput (tokens/sec)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "rate(llm_tokens_generated_total[1m])", "legendFormat": "tokens/sec" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Time to first token (TTFT)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.5, sum(rate(llm_ttft_seconds_bucket[1m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(llm_ttft_seconds_bucket[1m])) by (le))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Request duration",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.5, sum(rate(llm_request_duration_seconds_bucket[1m])) by (le))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum(rate(llm_request_duration_seconds_bucket[1m])) by (le))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Batch size (active gauge + p50 per step)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "llm_active_batch_size", "legendFormat": "active batch (now)" },
+        { "refId": "B", "expr": "histogram_quantile(0.5, sum(rate(llm_batch_size_bucket[1m])) by (le))", "legendFormat": "p50 batch/step" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "KV-cache utilization",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "llm_kv_cache_utilization_ratio", "legendFormat": "utilization" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Prefix-cache hit rate",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "llm_prefix_cache_hit_rate", "legendFormat": "hit rate" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Queue depth",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "llm_queue_depth", "legendFormat": "queued" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Requests finished by reason & rejections",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (reason) (rate(llm_requests_finished_total[1m]))", "legendFormat": "{{reason}}" },
+        { "refId": "B", "expr": "rate(llm_requests_rejected_total[1m])", "legendFormat": "rejected (429)" }
+      ]
+    }
+  ]
+}

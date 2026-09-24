@@ -1,0 +1,13 @@
+# Prometheus scrape config for the local stack. Prometheus pulls /metrics from
+# the server every few seconds and stores the time series; Grafana queries
+# Prometheus. A 2s scrape interval is aggressive but nice for a live demo where
+# you want the graphs to move as you send traffic.
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+scrape_configs:
+  - job_name: go-llm-server
+    static_configs:
+      - targets: ["server:8080"] # docker-compose service name resolves on the network
+    metrics_path: /metrics
