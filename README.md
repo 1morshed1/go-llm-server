@@ -1,5 +1,8 @@
 # go-llm-server
 
+[![CI](https://github.com/1morshed1/go-llm-server/actions/workflows/ci.yml/badge.svg)](https://github.com/1morshed1/go-llm-server/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A from-scratch **LLM inference server** written in Go — a teaching-grade,
 simplified version of what [vLLM](https://github.com/vllm-project/vllm),
 [Ollama](https://github.com/ollama/ollama), and
@@ -120,3 +123,7 @@ real `llama.cpp` backend, a multi-model manager/hot-swap, chunked prefill,
 preemption, auth, and Kubernetes manifests — is catalogued with implementation
 notes in [docs/12](docs/12-wrap-up-and-extensions.md). The full rationale for
 every design choice lives in the [decision log](docs/01-architecture-and-decisions.md).
+
+## License
+
+[MIT](LICENSE)
