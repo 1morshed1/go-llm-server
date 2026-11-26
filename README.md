@@ -3,8 +3,8 @@
 [![CI](https://github.com/1morshed1/go-llm-server/actions/workflows/ci.yml/badge.svg)](https://github.com/1morshed1/go-llm-server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A from-scratch **LLM inference server** written in Go — a teaching-grade,
-simplified version of what [vLLM](https://github.com/vllm-project/vllm),
+A from-scratch **LLM inference server** written in Go — a compact, from-scratch
+implementation of what [vLLM](https://github.com/vllm-project/vllm),
 [Ollama](https://github.com/ollama/ollama), and
 [TGI](https://github.com/huggingface/text-generation-inference) do.
 
